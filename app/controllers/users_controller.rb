@@ -70,6 +70,7 @@ class UsersController < ApplicationController
       # page, instead send them to the home page
       redirect_to @referer || { :controller => "site", :action => "index" }
     elsif params.key?(:auth_provider) && params.key?(:auth_uid)
+      @verified_email = params[:email]
       self.current_user = User.new(:email => params[:email],
                                    :email_confirmation => params[:email],
                                    :display_name => params[:nickname],
@@ -103,9 +104,11 @@ class UsersController < ApplicationController
         # Something is wrong with a new user, so rerender the form
         render :action => "new"
       elsif current_user.auth_provider.present?
-        # Verify external authenticator before moving on
         session[:new_user] = current_user.attributes.slice("email", "display_name", "pass_crypt")
-        redirect_to auth_url(current_user.auth_provider, current_user.auth_uid), :status => :temporary_redirect
+        session[:new_user]["verified_email"] = params[:verified_email]
+        session[:new_user]["auth_provider"] = user_params[:auth_provider]
+        session[:new_user]["auth_uid"] = user_params[:auth_uid]
+        redirect_to :action => "terms"
       else
         # Save the user record
         session[:new_user] = current_user.attributes.slice("email", "display_name", "pass_crypt")
@@ -264,12 +267,6 @@ class UsersController < ApplicationController
       session[:user_errors] = current_user.errors.as_json
 
       redirect_to edit_account_path
-    elsif session[:new_user]
-      session[:new_user]["auth_provider"] = provider
-      session[:new_user]["auth_uid"] = uid
-      session[:new_user]["verified_email"] = email if email_verified
-
-      redirect_to :action => "terms"
     else
       user = User.find_by(:auth_provider => provider, :auth_uid => uid)
 
