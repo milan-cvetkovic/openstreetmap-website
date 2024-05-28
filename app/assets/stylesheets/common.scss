@@ -1013,3 +1013,21 @@ img.trace_image {
     }
   }
 }
+
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  // color: $gray-600;
+  &:before, &:after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid;
+  }
+  &:not(:empty)::before {
+    margin-right: 1em;
+  }
+  &:not(:empty)::after {
+    margin-left: 1em;
+  }
+}
